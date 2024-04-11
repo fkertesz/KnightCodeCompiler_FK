@@ -1,0 +1,13 @@
+PROGRAM Program0
+
+DECLARE
+	INTEGER x
+
+BEGIN
+
+SET x := 9
+
+PRINT x
+
+END
+
