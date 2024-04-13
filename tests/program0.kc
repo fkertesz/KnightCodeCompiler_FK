@@ -1,13 +1,17 @@
-PROGRAM Program0
+PROGRAM Program1
 
 DECLARE
 	INTEGER x
+	INTEGER y
+	INTEGER z
 
 BEGIN
 
-SET x := 9
+SET x := 12
+SET y := 5
+SET z := x / y
 
-PRINT x
+PRINT z
 
 END
 

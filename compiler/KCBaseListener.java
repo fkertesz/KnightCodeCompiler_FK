@@ -176,6 +176,31 @@ public class KCBaseListener extends KnightCodeBaseListener {
 	 * <p>The default implementation does nothing.</p>
 	 */
 	@Override public void exitStat(KnightCodeParser.StatContext ctx) { }
+
+	/**
+	 * Method evaluates an expression, number or variable, and returns the value.
+	 * This method makes operation methods and senterSetVar more compact.
+	 * @param ctx
+	 */
+	public void loadExpr(KnightCodeParser.ExprContext ctx)
+	{
+		
+		//If expression is a variable
+		if(ctx instanceof KnightCodeParser.NumberContext)
+		{
+			int value = Integer.parseInt(ctx.getText());
+			mainVisitor.visitLdcInsn(value);
+		}
+		else if(ctx instanceof KnightCodeParser.IdContext)
+		{
+			String name = ctx.getText();
+			Variable var = symbolTable.get(name);
+			int location = var.getMemoryLocation();
+			mainVisitor.visitVarInsn(Opcodes.ILOAD, location);
+		}
+		System.out.println("Loaded " + ctx.getText());
+	}
+
 	/**
 	 * {@inheritDoc}
 	 *
@@ -183,6 +208,7 @@ public class KCBaseListener extends KnightCodeBaseListener {
 	 */
 	@Override public void enterSetvar(KnightCodeParser.SetvarContext ctx) 
 	{
+		//Fetch variable from symbol table
 		String name = ctx.ID().getText();
 		Variable var = symbolTable.get(name);
 
@@ -191,19 +217,8 @@ public class KCBaseListener extends KnightCodeBaseListener {
 			System.err.println("Variable called " + name + " has not been declared.");
 			System.exit(1);
 		}
-		else if(var.getType().equals("INTEGER"))
-		{
-			int intValue = Integer.parseInt(ctx.expr().getText());
-			mainVisitor.visitIntInsn(Opcodes.SIPUSH, intValue);
-			mainVisitor.visitVarInsn(Opcodes.ISTORE, var.getMemoryLocation());
-		}
-		else if(var.getType().equals("STRING"))
-		{
-			String stringValue = ctx.expr().getText();
-			mainVisitor.visitLdcInsn(stringValue);
-			mainVisitor.visitVarInsn(Opcodes.ASTORE, var.memoryLocation);
-		}
-		else
+		//If the variable is an integer, evaluate
+		else if(!var.getType().equals("INTEGER") && !var.getType().equals("STRING"))
 		{
 			System.err.println("Variable called " + name + " has unrecognized type.");
 			System.exit(1);
@@ -214,7 +229,27 @@ public class KCBaseListener extends KnightCodeBaseListener {
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitSetvar(KnightCodeParser.SetvarContext ctx) { }
+	@Override public void exitSetvar(KnightCodeParser.SetvarContext ctx)
+	{
+		//Fetch variable from symbol table
+		String name = ctx.ID().getText();
+		Variable var = symbolTable.get(name);
+
+		if(var.getType().equals("STRING"))
+		{
+			String value = ctx.expr().getText();
+			mainVisitor.visitLdcInsn(value);
+			mainVisitor.visitVarInsn(Opcodes.ASTORE, var.getMemoryLocation());
+		}
+		else if(var.getType().equals("INTEGER"))
+		{
+			if(ctx.expr() instanceof KnightCodeParser.NumberContext || ctx.expr() instanceof KnightCodeParser.IdContext)
+			{
+				loadExpr(ctx.expr());
+			}
+			mainVisitor.visitVarInsn(Opcodes.ISTORE, var.getMemoryLocation());
+		}
+	}
 	/**
 	 * {@inheritDoc}
 	 *
@@ -227,12 +262,21 @@ public class KCBaseListener extends KnightCodeBaseListener {
 	 * <p>The default implementation does nothing.</p>
 	 */
 	@Override public void exitParenthesis(KnightCodeParser.ParenthesisContext ctx) { }
+
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterMultiplication(KnightCodeParser.MultiplicationContext ctx) { }
+	@Override public void enterMultiplication(KnightCodeParser.MultiplicationContext ctx)
+	{
+		//Load the 2 numbers to be multiplied and multiplies them
+		for(int i = 0; i < 2; i++)
+		{
+			loadExpr(ctx.expr(i));
+		}
+		mainVisitor.visitInsn(Opcodes.IMUL);
+	}
 	/**
 	 * {@inheritDoc}
 	 *
@@ -244,7 +288,15 @@ public class KCBaseListener extends KnightCodeBaseListener {
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterAddition(KnightCodeParser.AdditionContext ctx) { }
+	@Override public void enterAddition(KnightCodeParser.AdditionContext ctx)
+	{
+		//Load the 2 numbers to be added and add them
+		for(int i = 0; i < 2; i++)
+		{
+			loadExpr(ctx.expr(i));
+		}
+		mainVisitor.visitInsn(Opcodes.IADD);
+	}
 	/**
 	 * {@inheritDoc}
 	 *
@@ -256,7 +308,15 @@ public class KCBaseListener extends KnightCodeBaseListener {
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterSubtraction(KnightCodeParser.SubtractionContext ctx) { }
+	@Override public void enterSubtraction(KnightCodeParser.SubtractionContext ctx)
+	{
+		//Load the 2 numbers to be subtracted and subtract them
+		for(int i = 0; i < 2; i++)
+		{
+			loadExpr(ctx.expr(i));
+		}
+		mainVisitor.visitInsn(Opcodes.ISUB);
+	}
 	/**
 	 * {@inheritDoc}
 	 *
@@ -292,7 +352,15 @@ public class KCBaseListener extends KnightCodeBaseListener {
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterDivision(KnightCodeParser.DivisionContext ctx) { }
+	@Override public void enterDivision(KnightCodeParser.DivisionContext ctx)
+	{
+		//Load the 2 numbers to be divided and divide them
+		for(int i = 0; i < 2; i++)
+		{
+			loadExpr(ctx.expr(i));
+		}
+		mainVisitor.visitInsn(Opcodes.IDIV);
+	}
 	/**
 	 * {@inheritDoc}
 	 *
