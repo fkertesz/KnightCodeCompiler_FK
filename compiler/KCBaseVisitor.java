@@ -20,7 +20,7 @@ import org.objectweb.asm.*;
  * of the available methods.
  */
 @SuppressWarnings("CheckReturnValue")
-public class KCBaseListener extends KnightCodeBaseListener {
+public class KCBaseVisitor extends KnightCodeBaseVisitor<Object> {
 
 	private ClassWriter cw;
 	private MethodVisitor mainVisitor;
@@ -32,7 +32,7 @@ public class KCBaseListener extends KnightCodeBaseListener {
 	 * Constructor for this with program name
 	 * @param programName
 	 */
-	public KCBaseListener(String programName)
+	public KCBaseVisitor(String programName)
 	{
 		this.programName = programName;
 	}
@@ -42,8 +42,10 @@ public class KCBaseListener extends KnightCodeBaseListener {
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterFile(KnightCodeParser.FileContext ctx)
+	@Override public Object visitFile(KnightCodeParser.FileContext ctx)
 	{
+        System.out.println("Visit file");
+        String programName = ctx.getChild(1).getText();
 		//Write class for program
 		cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
 		cw.visit(Opcodes.V1_8, Opcodes.ACC_PUBLIC, programName, null, "java/lang/Object", null);
@@ -58,26 +60,32 @@ public class KCBaseListener extends KnightCodeBaseListener {
 			mv.visitMaxs(1, 1);
 			mv.visitEnd();
 		}
+
+        System.out.println("Visit body");
+		mainVisitor = cw.visitMethod(Opcodes.ACC_PUBLIC+Opcodes.ACC_STATIC, "main", "([Ljava/lang/String;)V", null, null);
+		mainVisitor.visitCode();
+        
+
+        return super.visitFile(ctx);
 	}
 
 	/**
-	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitFile(KnightCodeParser.FileContext ctx) 
+	public void closeFile() 
 	{
-		mainVisitor.visitInsn(Opcodes.RETURN);
-		mainVisitor.visitMaxs(0, 0);
-		mainVisitor.visitEnd();
+		    mainVisitor.visitInsn(Opcodes.RETURN);
+		    mainVisitor.visitMaxs(0, 0);
+		    mainVisitor.visitEnd();
 		
-		cw.visitEnd();
+		    cw.visitEnd();
 
-		byte[] b = cw.toByteArray();
+		    byte[] b = cw.toByteArray();
 
-		Utilities.writeFile(b, this.programName+".class");
+		    Utilities.writeFile(b, this.programName+".class");
 
-		System.out.println("Compiled " + programName + "!");
+		    System.out.println("Compiled " + programName + "!");
 	}
 
 	/**
@@ -85,10 +93,11 @@ public class KCBaseListener extends KnightCodeBaseListener {
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterDeclare(KnightCodeParser.DeclareContext ctx)
+	@Override public Object visitDeclare(KnightCodeParser.DeclareContext ctx)
 	{
 		symbolTable = new HashMap<>();
 		memoryPtr = 0;
+        return super.visitDeclare(ctx);
 	}
 
 	/**
@@ -96,22 +105,13 @@ public class KCBaseListener extends KnightCodeBaseListener {
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitDeclare(KnightCodeParser.DeclareContext ctx)
-	{
-
-	}
-
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public void enterVariable(KnightCodeParser.VariableContext ctx)
+	@Override public Object visitVariable(KnightCodeParser.VariableContext ctx)
 	{
 		String type = ctx.vartype().getText();
 		String name = ctx.identifier().getText();
 		Variable var = new Variable(type, name, memoryPtr++);
 		symbolTable.put(name, var);
+        return super.visitVariable(ctx);
 	}
 
 	/**
@@ -119,97 +119,35 @@ public class KCBaseListener extends KnightCodeBaseListener {
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitVariable(KnightCodeParser.VariableContext ctx) { }
-
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public void enterIdentifier(KnightCodeParser.IdentifierContext ctx) { }
-
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public void exitIdentifier(KnightCodeParser.IdentifierContext ctx) { }
-
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public void enterVartype(KnightCodeParser.VartypeContext ctx) { }
-
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public void exitVartype(KnightCodeParser.VartypeContext ctx) { }
-
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public void enterBody(KnightCodeParser.BodyContext ctx)
+	//@Override public Object visitBody(KnightCodeParser.BodyContext ctx)
 	{
-		mainVisitor = cw.visitMethod(Opcodes.ACC_PUBLIC+Opcodes.ACC_STATIC, "main", "([Ljava/lang/String;)V", null, null);
-		mainVisitor.visitCode();
+        //System.out.println("Visit body");
+		//mainVisitor = cw.visitMethod(Opcodes.ACC_PUBLIC+Opcodes.ACC_STATIC, "main", "([Ljava/lang/String;)V", null, null);
+		//mainVisitor.visitCode();
+        //return super.visitBody(ctx);
 	}
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public void exitBody(KnightCodeParser.BodyContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public void enterStat(KnightCodeParser.StatContext ctx)
-	{
-		//if(ctx.getParent().getClass().getSimpleName().equals("DecisionContext"))
-		//{
-		//	if(ctx.print() != null)
-		//	{
-		//		//ctx.
-		//	}
-		//}
-
-	}
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public void exitStat(KnightCodeParser.StatContext ctx) { }
 
 	/**
 	 * Method evaluates an expression, number or variable, and returns the value.
 	 * This method makes operation methods and senterSetVar more compact.
 	 * @param ctx
 	 */
-	public void loadExpr(KnightCodeParser.ExprContext ctx)
+	public void loadExpr(String expr)
 	{
 		
 		//If expression is a variable
-		if(ctx instanceof KnightCodeParser.NumberContext)
+		if(expr.matches("[0-9]+"))
 		{
-			int value = Integer.parseInt(ctx.getText());
+			int value = Integer.parseInt(expr);
 			mainVisitor.visitLdcInsn(value);
 		}
-		else if(ctx instanceof KnightCodeParser.IdContext)
+		else
 		{
-			String name = ctx.getText();
+			String name = expr;
 			Variable var = symbolTable.get(name);
 			int location = var.getMemoryLocation();
 			mainVisitor.visitVarInsn(Opcodes.ILOAD, location);
 		}
-		System.out.println("Loaded " + ctx.getText());
 	}
 
 	/**
@@ -217,7 +155,7 @@ public class KCBaseListener extends KnightCodeBaseListener {
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterSetvar(KnightCodeParser.SetvarContext ctx) 
+	@Override public Object visitSetvar(KnightCodeParser.SetvarContext ctx)
 	{
 		//Fetch variable from symbol table
 		String name = ctx.ID().getText();
@@ -234,19 +172,7 @@ public class KCBaseListener extends KnightCodeBaseListener {
 			System.err.println("Variable called " + name + " has unrecognized type.");
 			System.exit(1);
 		}
-	}
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public void exitSetvar(KnightCodeParser.SetvarContext ctx)
-	{
-		//Fetch variable from symbol table
-		String name = ctx.ID().getText();
-		Variable var = symbolTable.get(name);
-
-		if(var.getType().equals("STRING"))
+		else if(var.getType().equals("STRING"))
 		{
 			String value = ctx.expr().getText();
 			mainVisitor.visitLdcInsn(value);
@@ -256,145 +182,61 @@ public class KCBaseListener extends KnightCodeBaseListener {
 		{
 			if(ctx.expr() instanceof KnightCodeParser.NumberContext || ctx.expr() instanceof KnightCodeParser.IdContext)
 			{
-				loadExpr(ctx.expr());
+				loadExpr(ctx.getChild(0).getText());
 			}
+            else
+            {
+                //Load sub expressions
+                String first = ctx.getChild(0).getText();
+                String second = ctx.getChild(2).getText();
+                loadExpr(first);
+                loadExpr(second);
+
+                //Use operator
+                String operator = ctx.getChild(1).getText();
+                switch(operator)
+                {
+                    case "+":
+                        mainVisitor.visitInsn(Opcodes.IADD);
+                        break;
+                    case "-":
+                        mainVisitor.visitInsn(Opcodes.ISUB);
+                        break;
+                    case "*":
+                        mainVisitor.visitInsn(Opcodes.IMUL);
+                        break;
+                    case "/":
+                        mainVisitor.visitInsn(Opcodes.IDIV);
+                        break;
+
+                }
+            }
+                
+
 			mainVisitor.visitVarInsn(Opcodes.ISTORE, var.getMemoryLocation());
 		}
+        return super.visitSetvar(ctx);
 	}
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterParenthesis(KnightCodeParser.ParenthesisContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public void exitParenthesis(KnightCodeParser.ParenthesisContext ctx) { }
+	@Override public Object visitParenthesis(KnightCodeParser.ParenthesisContext ctx)
+    {
+        return super.visitParenthesis(ctx);
+    }
 
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterMultiplication(KnightCodeParser.MultiplicationContext ctx)
-	{
-		//Load the 2 numbers to be multiplied and multiplies them
-		for(int i = 0; i < 2; i++)
-		{
-			loadExpr(ctx.expr(i));
-		}
-		mainVisitor.visitInsn(Opcodes.IMUL);
-	}
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public void exitMultiplication(KnightCodeParser.MultiplicationContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public void enterAddition(KnightCodeParser.AdditionContext ctx)
-	{
-		//Load the 2 numbers to be added and add them
-		for(int i = 0; i < 2; i++)
-		{
-			loadExpr(ctx.expr(i));
-		}
-		mainVisitor.visitInsn(Opcodes.IADD);
-	}
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public void exitAddition(KnightCodeParser.AdditionContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public void enterSubtraction(KnightCodeParser.SubtractionContext ctx)
-	{
-		//Load the 2 numbers to be subtracted and subtract them
-		for(int i = 0; i < 2; i++)
-		{
-			loadExpr(ctx.expr(i));
-		}
-		mainVisitor.visitInsn(Opcodes.ISUB);
-	}
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public void exitSubtraction(KnightCodeParser.SubtractionContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public void enterNumber(KnightCodeParser.NumberContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public void exitNumber(KnightCodeParser.NumberContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public void enterComparison(KnightCodeParser.ComparisonContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public void exitComparison(KnightCodeParser.ComparisonContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public void enterDivision(KnightCodeParser.DivisionContext ctx)
-	{
-		//Load the 2 numbers to be divided and divide them
-		for(int i = 0; i < 2; i++)
-		{
-			loadExpr(ctx.expr(i));
-		}
-		mainVisitor.visitInsn(Opcodes.IDIV);
-	}
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public void exitDivision(KnightCodeParser.DivisionContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public void enterId(KnightCodeParser.IdContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public void exitId(KnightCodeParser.IdContext ctx) { }
+	@Override public Object visitComparison(KnightCodeParser.ComparisonContext ctx)
+    {
+        return super.visitComparison(ctx);
+    }
 
-	/**
-	 * Method to count how many stats a decision has for then and else
-	 * @return
-	 */
 	public int[] countStats(KnightCodeParser.CompContext ctx)
 	{
 		int[] counts = new int [2];
@@ -412,10 +254,42 @@ public class KCBaseListener extends KnightCodeBaseListener {
 			{
 				if(counts[k] != 0)
 				{
-					k++;
+					k=1;
 				}
 			}
 		}
+        //FIXFIXFIX
+        //Iterate through children and gather the indices of the then stats and the else stats
+        int[] statsCounts = new int [counts[0]];
+        int[] elseCounts = new int [counts[1]];
+        int j = 0;
+        int n = 0;
+        for(int i = 0; i < ctx.getParent().children.size(); i++)
+        {
+            String name = ctx.getParent().children.get(i).getClass().getSimpleName();
+			if(name.equals("StatContext"))
+			{
+				//thenCounts[j] = i;
+                j++;
+			}
+            if(j == counts[0])
+            {
+                n = i;
+                i=ctx.getParent().children.size();
+            }
+        }
+
+        j=0;
+        for(int m = n; m < ctx.getParent().children.size(); m++)
+        {
+            String name = ctx.getParent().children.get(m).getClass().getSimpleName();
+			if(name.equals("StatContext"))
+			{
+				//thenCounts[j] = m;
+                j++;
+			}
+        }
+
 		return counts;
 	}
 
@@ -424,8 +298,9 @@ public class KCBaseListener extends KnightCodeBaseListener {
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterComp(KnightCodeParser.CompContext ctx)
+	@Override public Object visitComp(KnightCodeParser.CompContext ctx)
 	{
+		/*
 		String sign = ctx.getText();
 	
 		Label compTrue = new Label();
@@ -459,19 +334,17 @@ public class KCBaseListener extends KnightCodeBaseListener {
 		mainVisitor.visitLabel(compFalse);
 		//Implement 0's and 1's!!!!!!!!!!!!!!!!
 		visitTerminal(null);
+		*/
+
+        return super.visitComp(ctx);
 	}
+	
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitComp(KnightCodeParser.CompContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public void enterPrint(KnightCodeParser.PrintContext ctx)
+	@Override public Object visitPrint(KnightCodeParser.PrintContext ctx)
 	{
 		
 		if(ctx.ID() != null)
@@ -500,19 +373,16 @@ public class KCBaseListener extends KnightCodeBaseListener {
 			mainVisitor.visitLdcInsn(value);
 			mainVisitor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/io/PrintStream", "println", "(Ljava/lang/String;)V", false);
 		}
+
+        return super.visitPrint(ctx);
 	}
+	
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitPrint(KnightCodeParser.PrintContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public void enterRead(KnightCodeParser.ReadContext ctx)
+	@Override public Object visitRead(KnightCodeParser.ReadContext ctx)
 	{
 		//Variable to be read
 		String name = ctx.ID().getText();
@@ -538,20 +408,17 @@ public class KCBaseListener extends KnightCodeBaseListener {
 			mainVisitor.visitMethodInsn(Opcodes.INVOKEVIRTUAL,"java/util/Scanner", "nextInt", "()I", false);
 			mainVisitor.visitVarInsn(Opcodes.ISTORE, var.getMemoryLocation());
 		}
+
+        return super.visitRead(ctx);
 	}
 
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
+	 * @return 
 	 */
-	@Override public void exitRead(KnightCodeParser.ReadContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public void enterDecision(KnightCodeParser.DecisionContext ctx)
+	@Override public Object visitDecision(KnightCodeParser.DecisionContext ctx)
 	{
 		//Load the 2 expressions to be compared and compare them
 		for(int i = 0; i < 2; i++)
@@ -567,54 +434,19 @@ public class KCBaseListener extends KnightCodeBaseListener {
 				mainVisitor.visitLdcInsn(value);
 			}
 		}
-	}
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public void exitDecision(KnightCodeParser.DecisionContext ctx)
-	{
 
+        return super.visitDecision(ctx);
 	}
+	
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterLoop(KnightCodeParser.LoopContext ctx)
+	@Override public Object visitLoop(KnightCodeParser.LoopContext ctx)
 	{
 		System.out.println("EnterLoop");
+        return super.visitLoop(ctx);
 	}
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public void exitLoop(KnightCodeParser.LoopContext ctx) { }
 
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public void enterEveryRule(ParserRuleContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public void exitEveryRule(ParserRuleContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public void visitTerminal(TerminalNode node) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public void visitErrorNode(ErrorNode node) { }
 }

@@ -45,9 +45,13 @@ public class kcc
             Trees.inspect(tree, parser);
 
             //Create baselistener and parse tree walker, parse tree walker walk the tree
-            KCBaseListener baseListener = new KCBaseListener(output);
-            ParseTreeWalker ptWalker = new ParseTreeWalker();
-            ptWalker.walk(baseListener, tree);
+            KCBaseVisitor visitor = new KCBaseVisitor(output);
+            System.out.println("Done creating");
+            //ParseTreeWalker ptWalker = new ParseTreeWalker();
+            visitor.visit(tree);
+            System.out.println("Done visiting");
+            visitor.closeFile();
+            //ptWalker.walk(visitor, tree);
         }
 
         catch(IOException e)
