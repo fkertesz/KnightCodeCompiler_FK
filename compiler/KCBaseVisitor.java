@@ -263,108 +263,6 @@ public class KCBaseVisitor extends KnightCodeBaseVisitor<Object> {
     {
         return super.visitComparison(ctx);
     }
-
-	public int[] countStats(KnightCodeParser.CompContext ctx)
-	{
-		int[] counts = new int [2];
-		int k = 0;
-		
-		for(int i = 0; i < ctx.getParent().children.size(); i++)
-		{
-			String name = ctx.getParent().children.get(i).getClass().getSimpleName();
-			if(name.equals("StatContext"))
-			{
-				counts[k] ++;
-			}
-			//iterate to counting else stats
-			else
-			{
-				if(counts[k] != 0)
-				{
-					k=1;
-				}
-			}
-		}
-        //FIXFIXFIX
-        //Iterate through children and gather the indices of the then stats and the else stats
-        int[] statsCounts = new int [counts[0]];
-        int[] elseCounts = new int [counts[1]];
-        int j = 0;
-        int n = 0;
-        for(int i = 0; i < ctx.getParent().children.size(); i++)
-        {
-            String name = ctx.getParent().children.get(i).getClass().getSimpleName();
-			if(name.equals("StatContext"))
-			{
-				//thenCounts[j] = i;
-                j++;
-			}
-            if(j == counts[0])
-            {
-                n = i;
-                i=ctx.getParent().children.size();
-            }
-        }
-
-        j=0;
-        for(int m = n; m < ctx.getParent().children.size(); m++)
-        {
-            String name = ctx.getParent().children.get(m).getClass().getSimpleName();
-			if(name.equals("StatContext"))
-			{
-				//thenCounts[j] = m;
-                j++;
-			}
-        }
-
-		return counts;
-	}
-
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public Object visitComp(KnightCodeParser.CompContext ctx)
-	{
-		/*
-		String sign = ctx.getText();
-	
-		Label compTrue = new Label();
-		Label compFalse = new Label();
-
-		if(sign.equals("<"))
-			mainVisitor.visitJumpInsn(Opcodes.IF_ICMPLT, compTrue);
-		else if(sign.equals(">"))
-			mainVisitor.visitJumpInsn(Opcodes.IF_ICMPGT, compTrue);
-		else if(sign.equals("="))
-			mainVisitor.visitJumpInsn(Opcodes.IF_ICMPEQ, compTrue);
-		else if(sign.equals("<>"))
-			mainVisitor.visitJumpInsn(Opcodes.IF_ICMPNE, compTrue);
-
-		int[] counts = countStats(ctx);
-
-		//When false, load 0's for then stats and load 1's for else stats
-		for(int i = 0; i < counts[0]; i++)
-			mainVisitor.visitLdcInsn(0);
-		for(int j = 0; j < counts[1]; j++)
-			mainVisitor.visitLdcInsn(1);
-		mainVisitor.visitJumpInsn(Opcodes.GOTO, compFalse);
-
-		mainVisitor.visitLabel(compTrue);
-
-		//When true, load 1's for then stats and load 0's for else stats
-		for(int i = 0; i < counts[0]; i++)
-			mainVisitor.visitLdcInsn(1);
-		for(int j = 0; j < counts[1]; j++)
-			mainVisitor.visitLdcInsn(0);
-		mainVisitor.visitLabel(compFalse);
-		//Implement 0's and 1's!!!!!!!!!!!!!!!!
-		visitTerminal(null);
-		*/
-
-        return super.visitComp(ctx);
-	}
 	
 	/**
 	 * {@inheritDoc}
@@ -439,6 +337,39 @@ public class KCBaseVisitor extends KnightCodeBaseVisitor<Object> {
         return super.visitRead(ctx);
 	}
 
+	public int[] countStats(KnightCodeParser.DecisionContext ctx)
+	{
+		int[] counts = new int [2];
+		counts[0] = 0;
+		counts[1] = 0;
+		int numChildren = ctx.children.size();
+		System.out.println(numChildren);
+		
+		//Count how many stats are between then and else
+		for(int i = 5; i < numChildren; i++)
+		{
+			String name = ctx.children.get(i).getClass().getSimpleName();
+			if(name.equals("StatContext"))
+				counts[0] ++;
+			else
+				break;
+		}
+		System.out.println(counts[0]);
+
+		//Count how many stats are between else and endif
+		for(int i = numChildren-2; i > -1; i--)
+		{
+			String name = ctx.children.get(i).getClass().getSimpleName();
+			if(name.equals("StatContext"))
+				counts[1]++;
+			else
+				break;
+		}
+		System.out.println(counts[1]);
+        
+		return counts;
+	}
+
 	/**
 	 * {@inheritDoc}
 	 *
@@ -462,7 +393,41 @@ public class KCBaseVisitor extends KnightCodeBaseVisitor<Object> {
 			}
 		}
 
-        return super.visitDecision(ctx);
+		String sign = ctx.getChild(2).getText();
+		
+		Label thenLabel = new Label();
+		Label endLabel = new Label();
+
+		//Count stats
+		int[] counts = countStats(ctx);
+		
+		//If true, jump to then statement executions
+		if(sign.equals("<"))
+			mainVisitor.visitJumpInsn(Opcodes.IF_ICMPLT, thenLabel);
+		else if(sign.equals(">"))
+			mainVisitor.visitJumpInsn(Opcodes.IF_ICMPGT, thenLabel);
+		else if(sign.equals("="))
+			mainVisitor.visitJumpInsn(Opcodes.IF_ICMPEQ, thenLabel);
+		else if(sign.equals("<>"))
+			mainVisitor.visitJumpInsn(Opcodes.IF_ICMPNE, thenLabel);
+	
+
+		//Visit else stats, then jump to end
+		for(int i = 0; i < counts[1]; i++)
+		{
+			visit(ctx.getChild(6+counts[0]+i));
+		}
+		mainVisitor.visitJumpInsn(Opcodes.GOTO, endLabel);
+		mainVisitor.visitLabel(thenLabel);
+
+		for(int i = 0; i < counts[0]; i++)
+		{
+			visit(ctx.getChild(5+i));
+		}
+
+		mainVisitor.visitLabel(endLabel);
+
+        return null;
 	}
 	
 	/**

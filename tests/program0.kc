@@ -2,8 +2,12 @@ PROGRAM Program0
 
 DECLARE
 	INTEGER x
+	INTEGER y
 
 BEGIN
-	READ x
-	PRINT x
+	SET x := 10
+	SET y := 1
+	IF x > y THEN PRINT x PRINT y
+	ELSE PRINT y PRINT x
+	ENDIF
 END
