@@ -123,6 +123,11 @@ public class KnightCodeParser extends Parser {
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof KnightCodeListener ) ((KnightCodeListener)listener).exitFile(this);
 		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof KnightCodeVisitor ) return ((KnightCodeVisitor<? extends T>)visitor).visitFile(this);
+			else return visitor.visitChildren(this);
+		}
 	}
 
 	public final FileContext file() throws RecognitionException {
@@ -171,6 +176,11 @@ public class KnightCodeParser extends Parser {
 		@Override
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof KnightCodeListener ) ((KnightCodeListener)listener).exitDeclare(this);
+		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof KnightCodeVisitor ) return ((KnightCodeVisitor<? extends T>)visitor).visitDeclare(this);
+			else return visitor.visitChildren(this);
 		}
 	}
 
@@ -230,6 +240,11 @@ public class KnightCodeParser extends Parser {
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof KnightCodeListener ) ((KnightCodeListener)listener).exitVariable(this);
 		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof KnightCodeVisitor ) return ((KnightCodeVisitor<? extends T>)visitor).visitVariable(this);
+			else return visitor.visitChildren(this);
+		}
 	}
 
 	public final VariableContext variable() throws RecognitionException {
@@ -270,6 +285,11 @@ public class KnightCodeParser extends Parser {
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof KnightCodeListener ) ((KnightCodeListener)listener).exitIdentifier(this);
 		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof KnightCodeVisitor ) return ((KnightCodeVisitor<? extends T>)visitor).visitIdentifier(this);
+			else return visitor.visitChildren(this);
+		}
 	}
 
 	public final IdentifierContext identifier() throws RecognitionException {
@@ -306,6 +326,11 @@ public class KnightCodeParser extends Parser {
 		@Override
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof KnightCodeListener ) ((KnightCodeListener)listener).exitVartype(this);
+		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof KnightCodeVisitor ) return ((KnightCodeVisitor<? extends T>)visitor).visitVartype(this);
+			else return visitor.visitChildren(this);
 		}
 	}
 
@@ -358,6 +383,11 @@ public class KnightCodeParser extends Parser {
 		@Override
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof KnightCodeListener ) ((KnightCodeListener)listener).exitBody(this);
+		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof KnightCodeVisitor ) return ((KnightCodeVisitor<? extends T>)visitor).visitBody(this);
+			else return visitor.visitChildren(this);
 		}
 	}
 
@@ -430,6 +460,11 @@ public class KnightCodeParser extends Parser {
 		@Override
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof KnightCodeListener ) ((KnightCodeListener)listener).exitStat(this);
+		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof KnightCodeVisitor ) return ((KnightCodeVisitor<? extends T>)visitor).visitStat(this);
+			else return visitor.visitChildren(this);
 		}
 	}
 
@@ -519,6 +554,11 @@ public class KnightCodeParser extends Parser {
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof KnightCodeListener ) ((KnightCodeListener)listener).exitSetvar(this);
 		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof KnightCodeVisitor ) return ((KnightCodeVisitor<? extends T>)visitor).visitSetvar(this);
+			else return visitor.visitChildren(this);
+		}
 	}
 
 	public final SetvarContext setvar() throws RecognitionException {
@@ -592,6 +632,11 @@ public class KnightCodeParser extends Parser {
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof KnightCodeListener ) ((KnightCodeListener)listener).exitParenthesis(this);
 		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof KnightCodeVisitor ) return ((KnightCodeVisitor<? extends T>)visitor).visitParenthesis(this);
+			else return visitor.visitChildren(this);
+		}
 	}
 	@SuppressWarnings("CheckReturnValue")
 	public static class MultiplicationContext extends ExprContext {
@@ -610,6 +655,11 @@ public class KnightCodeParser extends Parser {
 		@Override
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof KnightCodeListener ) ((KnightCodeListener)listener).exitMultiplication(this);
+		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof KnightCodeVisitor ) return ((KnightCodeVisitor<? extends T>)visitor).visitMultiplication(this);
+			else return visitor.visitChildren(this);
 		}
 	}
 	@SuppressWarnings("CheckReturnValue")
@@ -630,6 +680,11 @@ public class KnightCodeParser extends Parser {
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof KnightCodeListener ) ((KnightCodeListener)listener).exitAddition(this);
 		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof KnightCodeVisitor ) return ((KnightCodeVisitor<? extends T>)visitor).visitAddition(this);
+			else return visitor.visitChildren(this);
+		}
 	}
 	@SuppressWarnings("CheckReturnValue")
 	public static class SubtractionContext extends ExprContext {
@@ -649,6 +704,11 @@ public class KnightCodeParser extends Parser {
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof KnightCodeListener ) ((KnightCodeListener)listener).exitSubtraction(this);
 		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof KnightCodeVisitor ) return ((KnightCodeVisitor<? extends T>)visitor).visitSubtraction(this);
+			else return visitor.visitChildren(this);
+		}
 	}
 	@SuppressWarnings("CheckReturnValue")
 	public static class NumberContext extends ExprContext {
@@ -661,6 +721,11 @@ public class KnightCodeParser extends Parser {
 		@Override
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof KnightCodeListener ) ((KnightCodeListener)listener).exitNumber(this);
+		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof KnightCodeVisitor ) return ((KnightCodeVisitor<? extends T>)visitor).visitNumber(this);
+			else return visitor.visitChildren(this);
 		}
 	}
 	@SuppressWarnings("CheckReturnValue")
@@ -683,6 +748,11 @@ public class KnightCodeParser extends Parser {
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof KnightCodeListener ) ((KnightCodeListener)listener).exitComparison(this);
 		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof KnightCodeVisitor ) return ((KnightCodeVisitor<? extends T>)visitor).visitComparison(this);
+			else return visitor.visitChildren(this);
+		}
 	}
 	@SuppressWarnings("CheckReturnValue")
 	public static class DivisionContext extends ExprContext {
@@ -702,6 +772,11 @@ public class KnightCodeParser extends Parser {
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof KnightCodeListener ) ((KnightCodeListener)listener).exitDivision(this);
 		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof KnightCodeVisitor ) return ((KnightCodeVisitor<? extends T>)visitor).visitDivision(this);
+			else return visitor.visitChildren(this);
+		}
 	}
 	@SuppressWarnings("CheckReturnValue")
 	public static class IdContext extends ExprContext {
@@ -714,6 +789,11 @@ public class KnightCodeParser extends Parser {
 		@Override
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof KnightCodeListener ) ((KnightCodeListener)listener).exitId(this);
+		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof KnightCodeVisitor ) return ((KnightCodeVisitor<? extends T>)visitor).visitId(this);
+			else return visitor.visitChildren(this);
 		}
 	}
 
@@ -880,6 +960,11 @@ public class KnightCodeParser extends Parser {
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof KnightCodeListener ) ((KnightCodeListener)listener).exitComp(this);
 		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof KnightCodeVisitor ) return ((KnightCodeVisitor<? extends T>)visitor).visitComp(this);
+			else return visitor.visitChildren(this);
+		}
 	}
 
 	public final CompContext comp() throws RecognitionException {
@@ -927,6 +1012,11 @@ public class KnightCodeParser extends Parser {
 		@Override
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof KnightCodeListener ) ((KnightCodeListener)listener).exitPrint(this);
+		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof KnightCodeVisitor ) return ((KnightCodeVisitor<? extends T>)visitor).visitPrint(this);
+			else return visitor.visitChildren(this);
 		}
 	}
 
@@ -976,6 +1066,11 @@ public class KnightCodeParser extends Parser {
 		@Override
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof KnightCodeListener ) ((KnightCodeListener)listener).exitRead(this);
+		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof KnightCodeVisitor ) return ((KnightCodeVisitor<? extends T>)visitor).visitRead(this);
+			else return visitor.visitChildren(this);
 		}
 	}
 
@@ -1032,6 +1127,11 @@ public class KnightCodeParser extends Parser {
 		@Override
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof KnightCodeListener ) ((KnightCodeListener)listener).exitDecision(this);
+		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof KnightCodeVisitor ) return ((KnightCodeVisitor<? extends T>)visitor).visitDecision(this);
+			else return visitor.visitChildren(this);
 		}
 	}
 
@@ -1151,6 +1251,11 @@ public class KnightCodeParser extends Parser {
 		@Override
 		public void exitRule(ParseTreeListener listener) {
 			if ( listener instanceof KnightCodeListener ) ((KnightCodeListener)listener).exitLoop(this);
+		}
+		@Override
+		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
+			if ( visitor instanceof KnightCodeVisitor ) return ((KnightCodeVisitor<? extends T>)visitor).visitLoop(this);
+			else return visitor.visitChildren(this);
 		}
 	}
 

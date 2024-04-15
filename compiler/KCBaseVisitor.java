@@ -45,7 +45,7 @@ public class KCBaseVisitor extends KnightCodeBaseVisitor<Object> {
 	@Override public Object visitFile(KnightCodeParser.FileContext ctx)
 	{
         System.out.println("Visit file");
-        String programName = ctx.getChild(1).getText();
+        //programName = ctx.ID().getText();
 		//Write class for program
 		cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
 		cw.visit(Opcodes.V1_8, Opcodes.ACC_PUBLIC, programName, null, "java/lang/Object", null);
@@ -60,11 +60,6 @@ public class KCBaseVisitor extends KnightCodeBaseVisitor<Object> {
 			mv.visitMaxs(1, 1);
 			mv.visitEnd();
 		}
-
-        System.out.println("Visit body");
-		mainVisitor = cw.visitMethod(Opcodes.ACC_PUBLIC+Opcodes.ACC_STATIC, "main", "([Ljava/lang/String;)V", null, null);
-		mainVisitor.visitCode();
-        
 
         return super.visitFile(ctx);
 	}
@@ -83,7 +78,7 @@ public class KCBaseVisitor extends KnightCodeBaseVisitor<Object> {
 
 		    byte[] b = cw.toByteArray();
 
-		    Utilities.writeFile(b, this.programName+".class");
+		    Utilities.writeFile(b, programName+".class");
 
 		    System.out.println("Compiled " + programName + "!");
 	}
@@ -107,6 +102,7 @@ public class KCBaseVisitor extends KnightCodeBaseVisitor<Object> {
 	 */
 	@Override public Object visitVariable(KnightCodeParser.VariableContext ctx)
 	{
+		System.out.println("Visit var");
 		String type = ctx.vartype().getText();
 		String name = ctx.identifier().getText();
 		Variable var = new Variable(type, name, memoryPtr++);
@@ -119,12 +115,12 @@ public class KCBaseVisitor extends KnightCodeBaseVisitor<Object> {
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	//@Override public Object visitBody(KnightCodeParser.BodyContext ctx)
+	@Override public Object visitBody(KnightCodeParser.BodyContext ctx)
 	{
-        //System.out.println("Visit body");
-		//mainVisitor = cw.visitMethod(Opcodes.ACC_PUBLIC+Opcodes.ACC_STATIC, "main", "([Ljava/lang/String;)V", null, null);
-		//mainVisitor.visitCode();
-        //return super.visitBody(ctx);
+        System.out.println("Visit body");
+		mainVisitor = cw.visitMethod(Opcodes.ACC_PUBLIC+Opcodes.ACC_STATIC, "main", "([Ljava/lang/String;)V", null, null);
+		mainVisitor.visitCode();
+        return super.visitBody(ctx);
 	}
 
 	/**
@@ -132,9 +128,10 @@ public class KCBaseVisitor extends KnightCodeBaseVisitor<Object> {
 	 * This method makes operation methods and senterSetVar more compact.
 	 * @param ctx
 	 */
+	/*
 	public void loadExpr(String expr)
 	{
-		
+		System.out.println("Expression: " + expr);
 		//If expression is a variable
 		if(expr.matches("[0-9]+"))
 		{
@@ -148,7 +145,65 @@ public class KCBaseVisitor extends KnightCodeBaseVisitor<Object> {
 			int location = var.getMemoryLocation();
 			mainVisitor.visitVarInsn(Opcodes.ILOAD, location);
 		}
-	}
+	}*/
+
+	public void evalExpr(KnightCodeParser.ExprContext ctx)
+	{
+        
+        //If expr number, loads value
+        if (ctx instanceof KnightCodeParser.NumberContext){
+            int value = Integer.parseInt(ctx.getText());
+            mainVisitor.visitLdcInsn(value);
+        }
+
+
+        // If the expr is ID, loads value
+        else if (ctx instanceof KnightCodeParser.IdContext){
+            String id = ctx.getText();
+            Variable var = symbolTable.get(id);
+            mainVisitor.visitVarInsn(Opcodes.ILOAD, var.getMemoryLocation());
+            
+        }
+
+		//If expr is an operational context, evaluate
+        else if (ctx instanceof KnightCodeParser.AdditionContext)
+		{
+            for(KnightCodeParser.ExprContext expr : ((KnightCodeParser.AdditionContext)ctx).expr())
+			{
+                evalExpr(expr);
+            }
+        mainVisitor.visitInsn(Opcodes.IADD);
+            
+        }
+		else if (ctx instanceof KnightCodeParser.SubtractionContext)
+		{
+            
+            for(KnightCodeParser.ExprContext expr : ((KnightCodeParser.SubtractionContext)ctx).expr())
+			{
+                evalExpr(expr);
+            }
+        mainVisitor.visitInsn(Opcodes.ISUB);
+            
+        }
+        else if (ctx instanceof KnightCodeParser.MultiplicationContext)
+		{
+            for(KnightCodeParser.ExprContext expr : ((KnightCodeParser.MultiplicationContext)ctx).expr())
+			{
+                evalExpr(expr);
+            }
+        mainVisitor.visitInsn(Opcodes.IMUL);
+        }
+        else if (ctx instanceof KnightCodeParser.DivisionContext)
+		{
+            for(KnightCodeParser.ExprContext expr : ((KnightCodeParser.DivisionContext)ctx).expr())
+			{
+                evalExpr(expr);
+            }
+        mainVisitor.visitInsn(Opcodes.IDIV);   
+        }
+
+        
+    }//end evalExpr
 
 	/**
 	 * {@inheritDoc}
@@ -174,49 +229,21 @@ public class KCBaseVisitor extends KnightCodeBaseVisitor<Object> {
 		}
 		else if(var.getType().equals("STRING"))
 		{
-			String value = ctx.expr().getText();
+			String valueExtra = ctx.expr().getText();
+			String value = valueExtra.replace("\"", "");
 			mainVisitor.visitLdcInsn(value);
 			mainVisitor.visitVarInsn(Opcodes.ASTORE, var.getMemoryLocation());
 		}
 		else if(var.getType().equals("INTEGER"))
 		{
-			if(ctx.expr() instanceof KnightCodeParser.NumberContext || ctx.expr() instanceof KnightCodeParser.IdContext)
-			{
-				loadExpr(ctx.getChild(0).getText());
-			}
-            else
-            {
-                //Load sub expressions
-                String first = ctx.getChild(0).getText();
-                String second = ctx.getChild(2).getText();
-                loadExpr(first);
-                loadExpr(second);
-
-                //Use operator
-                String operator = ctx.getChild(1).getText();
-                switch(operator)
-                {
-                    case "+":
-                        mainVisitor.visitInsn(Opcodes.IADD);
-                        break;
-                    case "-":
-                        mainVisitor.visitInsn(Opcodes.ISUB);
-                        break;
-                    case "*":
-                        mainVisitor.visitInsn(Opcodes.IMUL);
-                        break;
-                    case "/":
-                        mainVisitor.visitInsn(Opcodes.IDIV);
-                        break;
-
-                }
-            }
-                
+			
+            evalExpr(ctx.expr());
 
 			mainVisitor.visitVarInsn(Opcodes.ISTORE, var.getMemoryLocation());
 		}
         return super.visitSetvar(ctx);
 	}
+
 	/**
 	 * {@inheritDoc}
 	 *

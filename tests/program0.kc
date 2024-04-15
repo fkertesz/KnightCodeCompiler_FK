@@ -4,6 +4,6 @@ DECLARE
 	INTEGER x
 
 BEGIN
-	SET x := 10
+	READ x
 	PRINT x
 END
