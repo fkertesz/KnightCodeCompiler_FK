@@ -2,12 +2,12 @@ PROGRAM Program0
 
 DECLARE
 	INTEGER x
-	INTEGER y
 
 BEGIN
 	SET x := 10
-	SET y := 1
-	IF x > y THEN PRINT x PRINT y
-	ELSE PRINT y PRINT x
-	ENDIF
+	
+	WHILE x > 0 DO
+		PRINT x
+		SET x := x - 1
+	ENDWHILE
 END

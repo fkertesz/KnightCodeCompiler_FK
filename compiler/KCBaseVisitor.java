@@ -44,8 +44,7 @@ public class KCBaseVisitor extends KnightCodeBaseVisitor<Object> {
 	 */
 	@Override public Object visitFile(KnightCodeParser.FileContext ctx)
 	{
-        System.out.println("Visit file");
-        //programName = ctx.ID().getText();
+
 		//Write class for program
 		cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
 		cw.visit(Opcodes.V1_8, Opcodes.ACC_PUBLIC, programName, null, "java/lang/Object", null);
@@ -102,7 +101,6 @@ public class KCBaseVisitor extends KnightCodeBaseVisitor<Object> {
 	 */
 	@Override public Object visitVariable(KnightCodeParser.VariableContext ctx)
 	{
-		System.out.println("Visit var");
 		String type = ctx.vartype().getText();
 		String name = ctx.identifier().getText();
 		Variable var = new Variable(type, name, memoryPtr++);
@@ -117,35 +115,10 @@ public class KCBaseVisitor extends KnightCodeBaseVisitor<Object> {
 	 */
 	@Override public Object visitBody(KnightCodeParser.BodyContext ctx)
 	{
-        System.out.println("Visit body");
 		mainVisitor = cw.visitMethod(Opcodes.ACC_PUBLIC+Opcodes.ACC_STATIC, "main", "([Ljava/lang/String;)V", null, null);
 		mainVisitor.visitCode();
         return super.visitBody(ctx);
 	}
-
-	/**
-	 * Method evaluates an expression, number or variable, and returns the value.
-	 * This method makes operation methods and senterSetVar more compact.
-	 * @param ctx
-	 */
-	/*
-	public void loadExpr(String expr)
-	{
-		System.out.println("Expression: " + expr);
-		//If expression is a variable
-		if(expr.matches("[0-9]+"))
-		{
-			int value = Integer.parseInt(expr);
-			mainVisitor.visitLdcInsn(value);
-		}
-		else
-		{
-			String name = expr;
-			Variable var = symbolTable.get(name);
-			int location = var.getMemoryLocation();
-			mainVisitor.visitVarInsn(Opcodes.ILOAD, location);
-		}
-	}*/
 
 	public void evalExpr(KnightCodeParser.ExprContext ctx)
 	{
@@ -343,7 +316,6 @@ public class KCBaseVisitor extends KnightCodeBaseVisitor<Object> {
 		counts[0] = 0;
 		counts[1] = 0;
 		int numChildren = ctx.children.size();
-		System.out.println(numChildren);
 		
 		//Count how many stats are between then and else
 		for(int i = 5; i < numChildren; i++)
@@ -354,20 +326,40 @@ public class KCBaseVisitor extends KnightCodeBaseVisitor<Object> {
 			else
 				break;
 		}
-		System.out.println(counts[0]);
+		
+		//If then stat nodes + if nodes + endif node aren't all children, count else stats
+		if(6+counts[0] != numChildren)
+		{
+			//Count how many stats are between else and endif
+			for(int i = numChildren-2; i > -1; i--)
+			{
+				String name = ctx.children.get(i).getClass().getSimpleName();
+				if(name.equals("StatContext"))
+					counts[1]++;
+				else
+					break;
+			}
+		}
+        
+		return counts;
+	}
 
-		//Count how many stats are between else and endif
-		for(int i = numChildren-2; i > -1; i--)
+	public int countStats(KnightCodeParser.LoopContext ctx)
+	{
+		int count = 0;
+		int numChildren = ctx.children.size();
+
+		//Count how many stats are between then and else
+		for(int i = 5; i < numChildren; i++)
 		{
 			String name = ctx.children.get(i).getClass().getSimpleName();
 			if(name.equals("StatContext"))
-				counts[1]++;
+				count ++;
 			else
 				break;
 		}
-		System.out.println(counts[1]);
         
-		return counts;
+		return count;
 	}
 
 	/**
@@ -400,36 +392,57 @@ public class KCBaseVisitor extends KnightCodeBaseVisitor<Object> {
 
 		//Count stats
 		int[] counts = countStats(ctx);
-		
-		//If true, jump to then statement executions
-		if(sign.equals("<"))
-			mainVisitor.visitJumpInsn(Opcodes.IF_ICMPLT, thenLabel);
-		else if(sign.equals(">"))
-			mainVisitor.visitJumpInsn(Opcodes.IF_ICMPGT, thenLabel);
-		else if(sign.equals("="))
-			mainVisitor.visitJumpInsn(Opcodes.IF_ICMPEQ, thenLabel);
-		else if(sign.equals("<>"))
-			mainVisitor.visitJumpInsn(Opcodes.IF_ICMPNE, thenLabel);
+
+		//if no then stats, syntax error
+		if(counts[0] == 0)
+		{
+			System.out.println("Stat(s) required after THEN.");
+			return null;
+		}
+		else
+		{
+			//If true, jump to then statement executions
+			if(sign.equals("<"))
+				mainVisitor.visitJumpInsn(Opcodes.IF_ICMPLT, thenLabel);
+			else if(sign.equals(">"))
+				mainVisitor.visitJumpInsn(Opcodes.IF_ICMPGT, thenLabel);
+			else if(sign.equals("="))
+				mainVisitor.visitJumpInsn(Opcodes.IF_ICMPEQ, thenLabel);
+			else if(sign.equals("<>"))
+				mainVisitor.visitJumpInsn(Opcodes.IF_ICMPNE, thenLabel);
 	
 
-		//Visit else stats, then jump to end
-		for(int i = 0; i < counts[1]; i++)
-		{
-			visit(ctx.getChild(6+counts[0]+i));
+			//Visit else stats, then jump to end
+			for(int i = 0; i < counts[1]; i++)
+			{
+				visit(ctx.getChild(6+counts[0]+i));
+			}
+			mainVisitor.visitJumpInsn(Opcodes.GOTO, endLabel);
+			mainVisitor.visitLabel(thenLabel);
+
+			for(int i = 0; i < counts[0]; i++)
+			{
+				visit(ctx.getChild(5+i));
+			}
+
+			mainVisitor.visitLabel(endLabel);
+
+        	return null;
 		}
-		mainVisitor.visitJumpInsn(Opcodes.GOTO, endLabel);
-		mainVisitor.visitLabel(thenLabel);
-
-		for(int i = 0; i < counts[0]; i++)
-		{
-			visit(ctx.getChild(5+i));
-		}
-
-		mainVisitor.visitLabel(endLabel);
-
-        return null;
 	}
 	
+	public void loadInt(String value)
+	{
+        if( symbolTable.get(value) != null)
+		{
+            mainVisitor.visitVarInsn(Opcodes.ILOAD, symbolTable.get(value).getMemoryLocation());
+        }
+		else
+		{
+            mainVisitor.visitLdcInsn(Integer.valueOf(value));
+        }
+    }
+
 	/**
 	 * {@inheritDoc}
 	 *
@@ -437,8 +450,46 @@ public class KCBaseVisitor extends KnightCodeBaseVisitor<Object> {
 	 */
 	@Override public Object visitLoop(KnightCodeParser.LoopContext ctx)
 	{
-		System.out.println("EnterLoop");
-        return super.visitLoop(ctx);
+		String first = ctx.getChild(1).getText();
+        String second = ctx.getChild(3).getText();
+
+		String sign = ctx.getChild(2).getText();
+
+        Label endLabel = new Label();
+        Label startLabel = new Label();
+
+        mainVisitor.visitLabel(startLabel);
+
+        loadInt(first);
+        loadInt(second);
+
+        switch( sign ){
+            case ">":
+                mainVisitor.visitJumpInsn(Opcodes.IF_ICMPLE, endLabel);
+                break;
+            case "<":
+                mainVisitor.visitJumpInsn(Opcodes.IF_ICMPGE, endLabel);
+                break;
+            case "=":
+                mainVisitor.visitJumpInsn(Opcodes.IF_ICMPNE, endLabel);
+                break;
+            case "<>":
+                mainVisitor.visitJumpInsn(Opcodes.IF_ICMPEQ, endLabel);
+                break;
+        }
+
+
+        for(int i = 5 ; i < ctx.children.size()-1 ; i++) {
+            visit(ctx.getChild(i));
+        }
+		
+        mainVisitor.visitJumpInsn(Opcodes.GOTO, startLabel);
+
+        mainVisitor.visitLabel(endLabel);
+
+        mainVisitor.visitInsn(Opcodes.RETURN);
+
+        return null;
 	}
 
 }
