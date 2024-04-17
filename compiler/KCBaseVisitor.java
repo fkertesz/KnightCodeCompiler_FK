@@ -122,57 +122,48 @@ public class KCBaseVisitor extends KnightCodeBaseVisitor<Object> {
 
 	public void evalExpr(KnightCodeParser.ExprContext ctx)
 	{
+		System.out.println("Eval expr");
         
         //If expr number, loads value
         if (ctx instanceof KnightCodeParser.NumberContext){
+			System.out.println("Number context");
             int value = Integer.parseInt(ctx.getText());
             mainVisitor.visitLdcInsn(value);
         }
-
-
         // If the expr is ID, loads value
         else if (ctx instanceof KnightCodeParser.IdContext){
+			System.out.println("Id context");
             String id = ctx.getText();
             Variable var = symbolTable.get(id);
             mainVisitor.visitVarInsn(Opcodes.ILOAD, var.getMemoryLocation());
             
         }
-
 		//If expr is an operational context, evaluate
         else if (ctx instanceof KnightCodeParser.AdditionContext)
 		{
-            for(KnightCodeParser.ExprContext expr : ((KnightCodeParser.AdditionContext)ctx).expr())
-			{
-                evalExpr(expr);
-            }
-        mainVisitor.visitInsn(Opcodes.IADD);
+            evalExpr(((KnightCodeParser.AdditionContext)ctx).expr(0));
+			evalExpr(((KnightCodeParser.AdditionContext)ctx).expr(1));
+        	mainVisitor.visitInsn(Opcodes.IADD);
             
         }
 		else if (ctx instanceof KnightCodeParser.SubtractionContext)
 		{
-            
-            for(KnightCodeParser.ExprContext expr : ((KnightCodeParser.SubtractionContext)ctx).expr())
-			{
-                evalExpr(expr);
-            }
-        mainVisitor.visitInsn(Opcodes.ISUB);
+            evalExpr(((KnightCodeParser.SubtractionContext)ctx).expr(0));
+			evalExpr(((KnightCodeParser.SubtractionContext)ctx).expr(1));
+        	mainVisitor.visitInsn(Opcodes.ISUB);
             
         }
         else if (ctx instanceof KnightCodeParser.MultiplicationContext)
 		{
-            for(KnightCodeParser.ExprContext expr : ((KnightCodeParser.MultiplicationContext)ctx).expr())
-			{
-                evalExpr(expr);
-            }
-        mainVisitor.visitInsn(Opcodes.IMUL);
+            evalExpr(((KnightCodeParser.MultiplicationContext)ctx).expr(0));
+			evalExpr(((KnightCodeParser.MultiplicationContext)ctx).expr(1));
+        	mainVisitor.visitInsn(Opcodes.IMUL);
         }
         else if (ctx instanceof KnightCodeParser.DivisionContext)
 		{
-            for(KnightCodeParser.ExprContext expr : ((KnightCodeParser.DivisionContext)ctx).expr())
-			{
-                evalExpr(expr);
-            }
-        mainVisitor.visitInsn(Opcodes.IDIV);   
+            evalExpr(((KnightCodeParser.DivisionContext)ctx).expr(0));
+			evalExpr(((KnightCodeParser.DivisionContext)ctx).expr(1));
+        	mainVisitor.visitInsn(Opcodes.IDIV);   
         }
 
         
@@ -202,57 +193,37 @@ public class KCBaseVisitor extends KnightCodeBaseVisitor<Object> {
 		}
 		else if(var.getType().equals("STRING"))
 		{
-			String valueExtra = ctx.expr().getText();
+			String valueExtra = ctx.STRING().getText();
 			String value = valueExtra.replace("\"", "");
+			System.out.println(value);
 			mainVisitor.visitLdcInsn(value);
 			mainVisitor.visitVarInsn(Opcodes.ASTORE, var.getMemoryLocation());
 		}
 		else if(var.getType().equals("INTEGER"))
 		{
-			
             evalExpr(ctx.expr());
-
 			mainVisitor.visitVarInsn(Opcodes.ISTORE, var.getMemoryLocation());
 		}
         return super.visitSetvar(ctx);
 	}
-
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public Object visitParenthesis(KnightCodeParser.ParenthesisContext ctx)
-    {
-        return super.visitParenthesis(ctx);
-    }
-
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public Object visitComparison(KnightCodeParser.ComparisonContext ctx)
-    {
-        return super.visitComparison(ctx);
-    }
 	
 	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
+	 * Method triggered for PrintContext. Can print out a variable or string literal given in the kc program.
+	 * @return Object context for next visit
 	 */
 	@Override public Object visitPrint(KnightCodeParser.PrintContext ctx)
 	{
-		
+		//Set up print stream
+		mainVisitor.visitFieldInsn(Opcodes.GETSTATIC, "java/lang/System", "out", "Ljava/io/PrintStream;");
+
+		//Printing a variable
 		if(ctx.ID() != null)
 		{
 			//Get info about variable
 			String name = ctx.ID().getText();
 			Variable var = symbolTable.get(name);
 
-			//Print value of variable
-			mainVisitor.visitFieldInsn(Opcodes.GETSTATIC, "java/lang/System", "out", "Ljava/io/PrintStream;");
+			//Load variable from memory location, then print it.
 			if(var.getType().equals("STRING"))
 			{
         		mainVisitor.visitVarInsn(Opcodes.ALOAD, var.memoryLocation);
@@ -264,8 +235,11 @@ public class KCBaseVisitor extends KnightCodeBaseVisitor<Object> {
         		mainVisitor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/io/PrintStream", "println", "(I)V", false);
 			}
 		}
+
+		//Printing a string literal
 		else if(ctx.STRING() != null)
 		{
+			//Get string inside quotation marks, load it onto stack, print it
 			String valueExtra = ctx.STRING().getText();
 			String value = valueExtra.replaceAll("\"", "");
 			mainVisitor.visitLdcInsn(value);
@@ -362,6 +336,18 @@ public class KCBaseVisitor extends KnightCodeBaseVisitor<Object> {
 		return count;
 	}
 
+	public void evalSimpleExpr(String value)
+	{
+		if (symbolTable.get(value) != null)
+		{
+			mainVisitor.visitVarInsn(Opcodes.ILOAD, symbolTable.get(value).getMemoryLocation());
+		}
+		else
+		{
+			mainVisitor.visitLdcInsn(Integer.parseInt(value));
+		}
+	}
+
 	/**
 	 * {@inheritDoc}
 	 *
@@ -371,22 +357,13 @@ public class KCBaseVisitor extends KnightCodeBaseVisitor<Object> {
 	@Override public Object visitDecision(KnightCodeParser.DecisionContext ctx)
 	{
 		//Load the 2 expressions to be compared and compare them
-		for(int i = 0; i < 2; i++)
-		{
-			if(ctx.ID(i) != null)
-			{
-				Variable var = symbolTable.get(ctx.ID(i).getText());
-				mainVisitor.visitVarInsn(Opcodes.ILOAD, var.getMemoryLocation());
-			}
-			else if(ctx.NUMBER(i) != null)
-			{
-				int value = Integer.parseInt(ctx.NUMBER(i).getText());
-				mainVisitor.visitLdcInsn(value);
-			}
-		}
-
+		String first = ctx.getChild(1).getText();
+		String second = ctx.getChild(3).getText();
 		String sign = ctx.getChild(2).getText();
 		
+		evalSimpleExpr(first);
+        evalSimpleExpr(second);
+
 		Label thenLabel = new Label();
 		Label endLabel = new Label();
 
@@ -431,18 +408,6 @@ public class KCBaseVisitor extends KnightCodeBaseVisitor<Object> {
 		}
 	}
 	
-	public void loadInt(String value)
-	{
-        if( symbolTable.get(value) != null)
-		{
-            mainVisitor.visitVarInsn(Opcodes.ILOAD, symbolTable.get(value).getMemoryLocation());
-        }
-		else
-		{
-            mainVisitor.visitLdcInsn(Integer.valueOf(value));
-        }
-    }
-
 	/**
 	 * {@inheritDoc}
 	 *
@@ -452,7 +417,6 @@ public class KCBaseVisitor extends KnightCodeBaseVisitor<Object> {
 	{
 		String first = ctx.getChild(1).getText();
         String second = ctx.getChild(3).getText();
-
 		String sign = ctx.getChild(2).getText();
 
         Label endLabel = new Label();
@@ -460,8 +424,8 @@ public class KCBaseVisitor extends KnightCodeBaseVisitor<Object> {
 
         mainVisitor.visitLabel(startLabel);
 
-        loadInt(first);
-        loadInt(second);
+        evalSimpleExpr(first);
+        evalSimpleExpr(second);
 
         switch( sign ){
             case ">":

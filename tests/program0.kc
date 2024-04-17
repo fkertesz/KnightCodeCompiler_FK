@@ -1,13 +1,11 @@
 PROGRAM Program0
 
 DECLARE
-	INTEGER x
+	STRING x
 
 BEGIN
-	SET x := 10
+	SET x := "str"
+	PRINT x
 	
-	WHILE x > 0 DO
-		PRINT x
-		SET x := x - 1
-	ENDWHILE
+	
 END
