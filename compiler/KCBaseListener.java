@@ -5,9 +5,10 @@ import lexparse.*;
 
 import java.util.*;
 import compiler.utils.Utilities;
-import java.lang.*;
+//import java.lang.*;
 
-import org.antlr.v4.parse.ANTLRParser.elementOptions_return;
+import org.antlr.runtime.tree.ParseTree;
+//import org.antlr.v4.parse.ANTLRParser.elementOptions_return;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.tree.ErrorNode;
 import org.antlr.v4.runtime.tree.TerminalNode;
@@ -169,7 +170,17 @@ public class KCBaseListener extends KnightCodeBaseListener {
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterStat(KnightCodeParser.StatContext ctx) { }
+	@Override public void enterStat(KnightCodeParser.StatContext ctx)
+	{
+		//if(ctx.getParent().getClass().getSimpleName().equals("DecisionContext"))
+		//{
+		//	if(ctx.print() != null)
+		//	{
+		//		//ctx.
+		//	}
+		//}
+
+	}
 	/**
 	 * {@inheritDoc}
 	 *
@@ -379,12 +390,76 @@ public class KCBaseListener extends KnightCodeBaseListener {
 	 * <p>The default implementation does nothing.</p>
 	 */
 	@Override public void exitId(KnightCodeParser.IdContext ctx) { }
+
+	/**
+	 * Method to count how many stats a decision has for then and else
+	 * @return
+	 */
+	public int[] countStats(KnightCodeParser.CompContext ctx)
+	{
+		int[] counts = new int [2];
+		int k = 0;
+		
+		for(int i = 0; i < ctx.getParent().children.size(); i++)
+		{
+			String name = ctx.getParent().children.get(i).getClass().getSimpleName();
+			if(name.equals("StatContext"))
+			{
+				counts[k] ++;
+			}
+			//iterate to counting else stats
+			else
+			{
+				if(counts[k] != 0)
+				{
+					k++;
+				}
+			}
+		}
+		return counts;
+	}
+
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterComp(KnightCodeParser.CompContext ctx) { }
+	@Override public void enterComp(KnightCodeParser.CompContext ctx)
+	{
+		String sign = ctx.getText();
+	
+		Label compTrue = new Label();
+		Label compFalse = new Label();
+
+		if(sign.equals("<"))
+			mainVisitor.visitJumpInsn(Opcodes.IF_ICMPLT, compTrue);
+		else if(sign.equals(">"))
+			mainVisitor.visitJumpInsn(Opcodes.IF_ICMPGT, compTrue);
+		else if(sign.equals("="))
+			mainVisitor.visitJumpInsn(Opcodes.IF_ICMPEQ, compTrue);
+		else if(sign.equals("<>"))
+			mainVisitor.visitJumpInsn(Opcodes.IF_ICMPNE, compTrue);
+
+		int[] counts = countStats(ctx);
+
+		//When false, load 0's for then stats and load 1's for else stats
+		for(int i = 0; i < counts[0]; i++)
+			mainVisitor.visitLdcInsn(0);
+		for(int j = 0; j < counts[1]; j++)
+			mainVisitor.visitLdcInsn(1);
+		mainVisitor.visitJumpInsn(Opcodes.GOTO, compFalse);
+
+		mainVisitor.visitLabel(compTrue);
+
+		//When true, load 1's for then stats and load 0's for else stats
+		for(int i = 0; i < counts[0]; i++)
+			mainVisitor.visitLdcInsn(1);
+		for(int j = 0; j < counts[1]; j++)
+			mainVisitor.visitLdcInsn(0);
+		mainVisitor.visitLabel(compFalse);
+		//Implement 0's and 1's!!!!!!!!!!!!!!!!
+		visitTerminal(null);
+	}
 	/**
 	 * {@inheritDoc}
 	 *
@@ -398,21 +473,32 @@ public class KCBaseListener extends KnightCodeBaseListener {
 	 */
 	@Override public void enterPrint(KnightCodeParser.PrintContext ctx)
 	{
-		//Get info about variable
-		String name = ctx.ID().getText();
-		Variable var = symbolTable.get(name);
+		
+		if(ctx.ID() != null)
+		{
+			//Get info about variable
+			String name = ctx.ID().getText();
+			Variable var = symbolTable.get(name);
 
-		//Print value of variable
-		mainVisitor.visitFieldInsn(Opcodes.GETSTATIC, "java/lang/System", "out", "Ljava/io/PrintStream;");
-		if(var.getType().equals("STRING"))
-		{
-        	mainVisitor.visitVarInsn(Opcodes.ALOAD, var.memoryLocation);
-        	mainVisitor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/io/PrintStream", "println", "(Ljava/lang/String;)V", false);
+			//Print value of variable
+			mainVisitor.visitFieldInsn(Opcodes.GETSTATIC, "java/lang/System", "out", "Ljava/io/PrintStream;");
+			if(var.getType().equals("STRING"))
+			{
+        		mainVisitor.visitVarInsn(Opcodes.ALOAD, var.memoryLocation);
+        		mainVisitor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/io/PrintStream", "println", "(Ljava/lang/String;)V", false);
+			}
+			else if(var.getType().equals("INTEGER"))
+			{
+				mainVisitor.visitVarInsn(Opcodes.ILOAD, var.memoryLocation);
+        		mainVisitor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/io/PrintStream", "println", "(I)V", false);
+			}
 		}
-		else if(var.getType().equals("INTEGER"))
+		else if(ctx.STRING() != null)
 		{
-			mainVisitor.visitVarInsn(Opcodes.ILOAD, var.memoryLocation);
-        	mainVisitor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/io/PrintStream", "println", "(I)V", false);
+			String valueExtra = ctx.STRING().getText();
+			String value = valueExtra.replaceAll("\"", "");
+			mainVisitor.visitLdcInsn(value);
+			mainVisitor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/io/PrintStream", "println", "(Ljava/lang/String;)V", false);
 		}
 	}
 	/**
@@ -426,7 +512,34 @@ public class KCBaseListener extends KnightCodeBaseListener {
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterRead(KnightCodeParser.ReadContext ctx) { }
+	@Override public void enterRead(KnightCodeParser.ReadContext ctx)
+	{
+		//Variable to be read
+		String name = ctx.ID().getText();
+		Variable var = symbolTable.get(name);
+		int scanLoc = memoryPtr++;
+
+		//Create new scanner with System.in input and load it
+		mainVisitor.visitTypeInsn(Opcodes.NEW, "java/util/Scanner");
+		mainVisitor.visitInsn(Opcodes.DUP);
+		mainVisitor.visitFieldInsn(Opcodes.GETSTATIC, "java/lang/System", "in", "Ljava/io/InputStream;");//static field from system.in
+		mainVisitor.visitMethodInsn(Opcodes.INVOKESPECIAL, "java/util/Scanner", "<init>", "(Ljava/io/InputStream;)V", false);//Scanner constructor with system.in argument
+		mainVisitor.visitVarInsn(Opcodes.ASTORE, scanLoc);
+		mainVisitor.visitVarInsn(Opcodes.ALOAD, scanLoc);
+
+		//Get input and store appropriately
+		if(var.getType().equals("STRING"))
+		{
+			mainVisitor.visitMethodInsn(Opcodes.INVOKEVIRTUAL,"java/util/Scanner", "nextLine", "()Ljava/lang/String;", false);
+			mainVisitor.visitVarInsn(Opcodes.ASTORE, var.getMemoryLocation());
+		}
+		else if(var.getType().equals("INTEGER"))
+		{
+			mainVisitor.visitMethodInsn(Opcodes.INVOKEVIRTUAL,"java/util/Scanner", "nextInt", "()I", false);
+			mainVisitor.visitVarInsn(Opcodes.ISTORE, var.getMemoryLocation());
+		}
+	}
+
 	/**
 	 * {@inheritDoc}
 	 *
@@ -438,19 +551,41 @@ public class KCBaseListener extends KnightCodeBaseListener {
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterDecision(KnightCodeParser.DecisionContext ctx) { }
+	@Override public void enterDecision(KnightCodeParser.DecisionContext ctx)
+	{
+		//Load the 2 expressions to be compared and compare them
+		for(int i = 0; i < 2; i++)
+		{
+			if(ctx.ID(i) != null)
+			{
+				Variable var = symbolTable.get(ctx.ID(i).getText());
+				mainVisitor.visitVarInsn(Opcodes.ILOAD, var.getMemoryLocation());
+			}
+			else if(ctx.NUMBER(i) != null)
+			{
+				int value = Integer.parseInt(ctx.NUMBER(i).getText());
+				mainVisitor.visitLdcInsn(value);
+			}
+		}
+	}
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitDecision(KnightCodeParser.DecisionContext ctx) { }
+	@Override public void exitDecision(KnightCodeParser.DecisionContext ctx)
+	{
+
+	}
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterLoop(KnightCodeParser.LoopContext ctx) { }
+	@Override public void enterLoop(KnightCodeParser.LoopContext ctx)
+	{
+		System.out.println("EnterLoop");
+	}
 	/**
 	 * {@inheritDoc}
 	 *
