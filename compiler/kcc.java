@@ -1,12 +1,18 @@
+/**kcc
+ * This class contains the main method that kicks off the KnightCode compiler.
+ * It takes 2 arguments: 1. The name of the kc file (with path if necessary).
+ * 2. The name of the output class file (with path if necessary).
+ * @author Fanni Kertesz
+ * @version 1.0
+ * Assignment 5
+ * CS 322 - Compiler Construction
+ * Spring 2024
+ */
 package compiler;
 
 import java.io.IOException;
-
-import org.antlr.v4.gui.Trees;
 import org.antlr.v4.runtime.tree.*;
-
 import lexparse.*;
-
 import org.antlr.v4.runtime.CharStream;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.*;
@@ -33,30 +39,27 @@ public class kcc
         String output;
 
         try{
-            //Get input, create lexer, create token stream, and create parser
+            //Get input, and create lexer, token stream, parser, and tree
             inputStream = CharStreams.fromFileName(args[0]);
             lexer = new KnightCodeLexer(inputStream);
             tokenStream = new CommonTokenStream(lexer);
             parser = new KnightCodeParser(tokenStream);
             output = args[1];
-
-            //Create parse tree and display it
             ParseTree tree = parser.file();
-            Trees.inspect(tree, parser);
 
             //Create baselistener and parse tree walker, parse tree walker walk the tree
             KCBaseVisitor visitor = new KCBaseVisitor(output);
-            System.out.println("Done creating");
             //ParseTreeWalker ptWalker = new ParseTreeWalker();
             visitor.visit(tree);
-            System.out.println("Done visiting");
             visitor.closeFile();
             //ptWalker.walk(visitor, tree);
         }
 
+        //catch input ourput exception and print error message
         catch(IOException e)
         {
             System.out.println(e.getMessage());
         }
-    }
-}
+
+    }//end main method
+}//end class
