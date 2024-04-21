@@ -10,14 +10,13 @@ Required libraries:
 - ASM: asm-9.6.jar
 
 Set-up Instructions:
-
-Clone this repository onto your machine. To do this, run "git clone https://github.com/fkertesz/KnightCode_FK.git" in your desired directory in the command line. Change into this directory (KnightCode_FK).
-Run the commands "ant build-grammar", then "ant compile-grammar", then "ant compile". These commands will create a lexparse directory with the appropriate java files built by ANTLR and compile these java files and the compiler java files into class files.
+- Clone this repository onto your machine. To do this, run "git clone https://github.com/fkertesz/KnightCode_FK.git" in your desired directory in the command line. Change into this directory (KnightCode_FK).
+- Run the commands "ant build-grammar", then "ant compile-grammar", then "ant compile". These commands will create a lexparse directory with the appropriate java files built by ANTLR and compile these java files and the compiler java files into class files.
 
 Using the Compiler:
 
-To compile kc files, run the command "java compiler.kcc path/programI.kc output/programO" where "path" is the path to the kc file to be compiled, "programI.kc" is the kc file to be compiled, and programO is the name of the class file this will compile; usually, "programI" and "programO" will be the same. The compiled class file will be in the output directory.
-To run the compiled file, run the command "java output/programO".
+- To compile kc files, run the command "java compiler.kcc path/programI.kc output/programO" where "path" is the path to the kc file to be compiled, "programI.kc" is the kc file to be compiled, and programO is the name of the class file this will compile; usually, "programI" and "programO" will be the same. The compiled class file will be in the output directory.
+- To run the compiled file, run the command "java output/programO".
 
 Author: Fanni Kertesz
 This is a project for the Compiler Construction class at Bellarmine University.
