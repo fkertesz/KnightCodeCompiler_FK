@@ -11,7 +11,7 @@ Required libraries:
 
 Set-up Instructions:
 
-Clone this repository onto your machine. To do this, run "git clone https://github.com/fkertesz/KnightCode_FK.git" in your desired directory in the command line. Change into this directory.
+Clone this repository onto your machine. To do this, run "git clone https://github.com/fkertesz/KnightCode_FK.git" in your desired directory in the command line. Change into this directory (KnightCode_FK).
 Run the commands "ant build-grammar", then "ant compile-grammar", then "ant compile". These commands will create a lexparse directory with the appropriate java files built by ANTLR and compile these java files and the compiler java files into class files.
 
 Using the Compiler:
