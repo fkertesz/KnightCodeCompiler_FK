@@ -47,15 +47,13 @@ public class kcc
             output = args[1];
             ParseTree tree = parser.file();
 
-            //Create baselistener and parse tree walker, parse tree walker walk the tree
+            //Create basevisitor and visit the tree, then close file when done
             KCBaseVisitor visitor = new KCBaseVisitor(output);
-            //ParseTreeWalker ptWalker = new ParseTreeWalker();
             visitor.visit(tree);
             visitor.closeFile();
-            //ptWalker.walk(visitor, tree);
         }
 
-        //catch input ourput exception and print error message
+        //Catch input output exception and print error message
         catch(IOException e)
         {
             System.out.println(e.getMessage());
