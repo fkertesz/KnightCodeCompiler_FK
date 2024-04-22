@@ -21,7 +21,7 @@ The compiler supports the following language features of KnightCode:
 ## Set-up Instructions
 
 - Clone this repository onto your machine. To do this, run "git clone https://github.com/fkertesz/KnightCodeCompiler_FK.git" in your desired directory in the command line. Change into this directory (KnightCodeCompiler_FK).
-- Run the commands "ant build-grammar", then "ant compile-grammar", then "ant compile". These commands will create a lexparse directory with the appropriate java files built by ANTLR and compile these java files and the compiler java files into class files.
+- Run the commands "ant build-grammar", then "ant compile-grammar", then "ant compile". These commands will create a lexparse directory with the appropriate java files built by ANTLR and then compile the ANTLR-generated and the compiler java files into class files.
 
 ## Using the Compiler
 
@@ -30,7 +30,7 @@ The compiler supports the following language features of KnightCode:
 
 ## Example Usage
 
-- To compile "program1.kc" in the tests directory and name the compiled class file "program1" as well while in the KnightCodeCompiler_FK directory, run "java compiler.kcc tests/program1.kc output/program1" to compile and then "java output/program1" to run the program1.
+- To compile "program1.kc" in the tests directory and name the compiled class file "program1" as well while in the KnightCodeCompiler_FK directory, run "java compiler.kcc tests/program1.kc output/program1" to compile and then "java output/program1" to run program1.
 
 ##### Author: Fanni Kertesz
 ##### This is a project for the Compiler Construction class at Bellarmine University.
