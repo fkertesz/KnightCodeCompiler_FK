@@ -3,9 +3,8 @@
 ## Overview
 
 This repository is a compiler built for the KnightCode programming language. This compiler translates KnightCode source files into Java bytecode using ANTLR for lexing and parsing, and ASM for bytecode manipulation.
-KnightCode supports INTEGER and STRING variables, printing variables and string literals onto the screen, basic arithmetic (addition, subtraction, multiplication, division), comparisons of integers, getting inputs from user, if/else conditionals, and while loops.
 
-## Feartures
+## Features
 
 The compiler supports the following language features of KnightCode:
 - Variables of type INTEGER and STRING
